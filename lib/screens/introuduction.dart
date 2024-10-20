@@ -14,42 +14,35 @@ class _IntroductionScreenState extends State<IntroductionScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xfff8f3f3),
       body: PageView(
         controller: _pageController,
-        physics: const NeverScrollableScrollPhysics(), // Disable manual scrolling
+        physics: const NeverScrollableScrollPhysics(),
         children: [
           buildPage(
             context,
-            imageUrl:
-            'https://storage.googleapis.com/a1aa/image/wMuACgWqCP6bLpoqNriC4weQdSY0xhpIKYw88K3flat7DToTA.jpg',
-            bgColor: Colors.green[200],
+            imagePath: 'assets/images/Group 44.png',
+            bgColor: const Color(0xFF5EA25F), // Quality color
             title: 'Quality',
             description:
             'Sell your farm fresh products directly to consumers, cutting out the middleman and reducing emissions of the global supply chain.',
-            buttonColor: Colors.green,
             onJoinMovement: () => _scrollToNextPage(),
           ),
           buildPage(
             context,
-            imageUrl:
-            'https://storage.googleapis.com/a1aa/image/dIpMFOdpCvJ0B1FK37ANGFJL4YJL3G9GCRYDrZ5ihAwfhJ0JA.jpg',
-            bgColor: Colors.orange[200],
+            imagePath: 'assets/images/Group.png',
+            bgColor: const Color(0xFFD5715B), // Convenient color
             title: 'Convenient',
             description:
             'Our team of delivery drivers will make sure your orders are picked up on time and promptly delivered to your customers.',
-            buttonColor: Colors.orange,
             onJoinMovement: () => _scrollToNextPage(),
           ),
           buildPage(
             context,
-            imageUrl:
-            'https://storage.googleapis.com/a1aa/image/6w03uc1OrIJYLtO1XPEfZLHA0PHR7wdPUDck0JkcO5teDToTA.jpg',
-            bgColor: Colors.yellow[200],
+            imagePath: 'assets/images/Group 46.png',
+            bgColor: const Color(0xFFF8C569), // Local color
             title: 'Local',
             description:
             'We love the earth and know you do too! Join us in reducing our local carbon footprint one order at a time.',
-            buttonColor: Colors.yellow,
             onJoinMovement: () => _navigateToLogin(context),
           ),
         ],
@@ -75,106 +68,77 @@ class _IntroductionScreenState extends State<IntroductionScreen> {
 
   Widget buildPage(
       BuildContext context, {
-        required String imageUrl,
-        required Color? bgColor,
+        required String imagePath,
+        required Color bgColor,
         required String title,
         required String description,
-        required Color buttonColor,
         required VoidCallback onJoinMovement,
       }) {
-    return Center(
-      child: SingleChildScrollView(
+    return Container(
+      color: bgColor,
+      child: SafeArea(
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(
-              width: 320,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: const [
-                  BoxShadow(
-                    color: Colors.black26,
-                    blurRadius: 10,
-                    offset: Offset(0, 5),
+            Expanded(
+              flex: 3,
+              child: Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(20),
+                  child: Image.asset(
+                    imagePath,
+                    fit: BoxFit.contain, // Adjusted BoxFit to contain
                   ),
-                ],
+                ),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: bgColor,
-                      borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(24),
-                        topRight: Radius.circular(24),
-                      ),
-                    ),
-                    child: ClipRRect(
-                      borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(24),
-                        topRight: Radius.circular(24),
-                      ),
-                      child: Image.network(
-                        imageUrl,
-                        height: 240,
-                        width: double.infinity,
-                        fit: BoxFit.cover,
-                      ),
-                    ),
+            ),
+            Expanded(
+              flex: 2,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(30),
+                    topRight: Radius.circular(30),
                   ),
-                  Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      children: [
-                        Text(
-                          title,
-                          style: const TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(20.0),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      Text(
+                        title,
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: bgColor,
+                        ),
+                      ),
+                      Text(
+                        description,
+                        style: const TextStyle(color: Colors.grey, fontSize: 16),
+                        textAlign: TextAlign.center,
+                      ),
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: bgColor,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30),
                           ),
+                          padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
                         ),
-                        const SizedBox(height: 10),
-                        Text(
-                          description,
-                          style: TextStyle(color: Colors.grey[600]),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 20),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: const [
-                            Text('•', style: TextStyle(fontSize: 24)),
-                            SizedBox(width: 10),
-                            Text('•', style: TextStyle(fontSize: 24)),
-                            SizedBox(width: 10),
-                            Text('•', style: TextStyle(fontSize: 24)),
-                          ],
-                        ),
-                        const SizedBox(height: 20),
-                        ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: buttonColor,
-                            shape: const StadiumBorder(),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 32,
-                              vertical: 12,
-                            ),
-                          ),
-                          onPressed: onJoinMovement,
-                          child: const Text('Join the movement!'),
-                        ),
-                        const SizedBox(height: 10),
-                        TextButton(
-                          onPressed: () => _navigateToLogin(context),
-                          child: const Text('Login'),
-                        ),
-                      ],
-                    ),
+                        onPressed: onJoinMovement,
+                        child: const Text('Join the movement!', style: TextStyle(fontSize: 18)),
+                      ),
+                      TextButton(
+                        onPressed: () => _navigateToLogin(context),
+                        child: Text('Login', style: TextStyle(color: Colors.black, fontSize: 16)),
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
             ),
           ],
