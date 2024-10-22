@@ -4,6 +4,10 @@ import 'package:farmer_eats/screens/HomeScreen.dart';
 class SignupStep5 extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    // Get the height and width of the screen
+    final screenHeight = MediaQuery.of(context).size.height;
+    final screenWidth = MediaQuery.of(context).size.width;
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: Center(
@@ -13,14 +17,19 @@ class SignupStep5 extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              SizedBox(height: 300),
+              // Flexible space to adjust height dynamically
+              Flexible(
+                flex: 2,
+                child: SizedBox(height: screenHeight * 0.25), // 25% of screen height
+              ),
+
               // Image in the center
               Container(
                 margin: EdgeInsets.only(bottom: 24.0),
                 child: Image.asset(
                   'assets/images/tick.png',
-                  width: 100,
-                  height: 100,
+                  width: screenWidth * 0.25, // 25% of screen width
+                  height: screenWidth * 0.25, // Maintain aspect ratio
                 ),
               ),
 
@@ -37,21 +46,27 @@ class SignupStep5 extends StatelessWidget {
 
               // Subtitle Text
               SizedBox(height: 16.0),
-              Text(
-                "Hang tight! We are currently reviewing your account and will follow up with you in 2-3 business days. In the meantime, you can setup your inventory.",
-                style: TextStyle(
-                  fontSize: 16.0,
-                  color: Colors.grey[500],
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: Text(
+                  "Hang tight! We are currently reviewing your account and will follow up with you in 2-3 business days. In the meantime, you can setup your inventory.",
+                  style: TextStyle(
+                    fontSize: 16.0,
+                    color: Colors.grey[500],
+                  ),
+                  textAlign: TextAlign.center,
                 ),
-                textAlign: TextAlign.center,
               ),
 
               // Button
-              SizedBox(height: 200),
+              Flexible(
+                flex: 1,
+                child: SizedBox(height: screenHeight * 0.15), // 15% of screen height
+              ),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                    backgroundColor: Color(0xFFD5715B),// Button background color
-                  padding: EdgeInsets.symmetric(horizontal: 150, vertical: 12.0),
+                  backgroundColor: Color(0xFFD5715B), // Button background color
+                  padding: EdgeInsets.symmetric(horizontal: 40.0, vertical: 12.0),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(30.0),
                   ),

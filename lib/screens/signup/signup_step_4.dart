@@ -1,5 +1,6 @@
-import 'package:farmer_eats/screens/signup/signup_step_5.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'signup_step_5.dart';
 
 class SignupStep4 extends StatefulWidget {
   @override
@@ -7,6 +8,7 @@ class SignupStep4 extends StatefulWidget {
 }
 
 class _SignupStep4State extends State<SignupStep4> {
+  Map<String, List<String>> dayTimings = {};
   String selectedDay = '';
   String selectedTime = '';
 
@@ -18,21 +20,52 @@ class _SignupStep4State extends State<SignupStep4> {
   }
 
   void selectTime(String time) {
+    if (selectedDay.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text("Please select a day first."),
+      ));
+      return;
+    }
     setState(() {
-      selectedTime = time;
+      if (!dayTimings.containsKey(selectedDay)) {
+        dayTimings[selectedDay] = [];
+      }
+
+      // If the time slot is already selected for the day, remove it. Otherwise, add it.
+      if (dayTimings[selectedDay]!.contains(time)) {
+        dayTimings[selectedDay]!.remove(time);
+      } else {
+        dayTimings[selectedDay]!.add(time);
+      }
     });
-    print('Selected time: $selectedTime');
+    print('Day timings: $dayTimings');
   }
 
-  void saveData() {
-    if (selectedDay.isNotEmpty && selectedTime.isNotEmpty) {
-      print("Saving Data: Day: $selectedDay, Time: $selectedTime");
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text("Data saved successfully!"),
-      ));
+  void saveDataToFirebase() async {
+    if (dayTimings.isNotEmpty) {
+      // Save to Firestore (or any other Firebase service)
+      try {
+        await FirebaseFirestore.instance.collection('users').add({
+          'business_hours': dayTimings,
+        });
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text("Data saved successfully!"),
+        ));
+
+        // Navigate to the next step
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => SignupStep5()),
+        );
+      } catch (error) {
+        print('Error saving data to Firebase: $error');
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text("Error saving data. Please try again."),
+        ));
+      }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text("Please select both a day and a time."),
+        content: Text("Please select at least one day and time."),
       ));
     }
   }
@@ -82,26 +115,25 @@ class _SignupStep4State extends State<SignupStep4> {
               Row(
                 children: [
                   SizedBox(width: 10),
-                  timeSlotButton('8:00am-10:00am', selectedTime),
+                  timeSlotButton('8:00am-10:00am'),
                   SizedBox(width: 40),
-                  timeSlotButton('10:00am-1:00pm', selectedTime),
+                  timeSlotButton('10:00am-1:00pm'),
                 ],
               ),
               Row(
                 children: [
                   SizedBox(width: 10),
-                  timeSlotButton('1:00pm-4:00pm', selectedTime),
+                  timeSlotButton('1:00pm-4:00pm'),
                   SizedBox(width: 40),
-                  timeSlotButton('4:00pm-7:00pm', selectedTime),
+                  timeSlotButton('4:00pm-7:00pm'),
                 ],
               ),
               Row(
                 children: [
                   SizedBox(width: 10),
-                  timeSlotButton('7:00pm-10:00pm', selectedTime),
+                  timeSlotButton('7:00pm-10:00pm'),
                 ],
               ),
-
               SizedBox(height: 200),
 
               // Buttons
@@ -115,12 +147,7 @@ class _SignupStep4State extends State<SignupStep4> {
                     },
                   ),
                   ElevatedButton(
-                    onPressed: () {
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(builder: (context) => SignupStep5()),
-                      );
-                    },
+                    onPressed: saveDataToFirebase, // Save to Firebase
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Color(0xFFD5715B), // Same as "Continue" button color
                       padding: EdgeInsets.symmetric(horizontal: 50, vertical: 12),
@@ -146,17 +173,19 @@ class _SignupStep4State extends State<SignupStep4> {
         width: 40,
         height: 40,
         decoration: BoxDecoration(
-          color: selectedDay == day ? Color(0xFFD5715B) : Colors.grey[200], // "Continue" button color for selected day
+          color: dayTimings.containsKey(day) && dayTimings[day]!.isNotEmpty
+              ? Color(0xFFD5715B)
+              : Colors.grey[200], // Selected day color
           borderRadius: BorderRadius.circular(8),
         ),
         child: Center(
-          child: Text(day, style: TextStyle(color: selectedDay == day ? Colors.white : Colors.black)),
+          child: Text(day, style: TextStyle(color: dayTimings.containsKey(day) && dayTimings[day]!.isNotEmpty ? Colors.white : Colors.black)),
         ),
       ),
     );
   }
 
-  Widget timeSlotButton(String time, String selectedTime) {
+  Widget timeSlotButton(String time) {
     return GestureDetector(
       onTap: () => selectTime(time),
       child: Container(
@@ -164,10 +193,12 @@ class _SignupStep4State extends State<SignupStep4> {
         padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
         width: 150, // Adjust the width to fit two buttons in a row
         decoration: BoxDecoration(
-          color: this.selectedTime == time ? Color(0xFFF8C569) : Colors.grey[200], // Selected time color
+          color: selectedDay.isNotEmpty && dayTimings[selectedDay] != null && dayTimings[selectedDay]!.contains(time)
+              ? Color(0xFFF8C569)
+              : Colors.grey[200], // Selected time color
           borderRadius: BorderRadius.circular(8),
         ),
-        child: Text(time, style: TextStyle(color: this.selectedTime == time ? Colors.black : Colors.grey[600])),
+        child: Text(time, style: TextStyle(color: selectedDay.isNotEmpty && dayTimings[selectedDay]!.contains(time) ? Colors.black : Colors.grey[600])),
       ),
     );
   }

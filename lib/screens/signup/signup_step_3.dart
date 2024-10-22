@@ -2,7 +2,8 @@ import 'dart:io';
 import 'package:farmer_eats/screens/signup/signup_step_2.dart';
 import 'package:farmer_eats/screens/signup/signup_step_4.dart';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:firebase_storage/firebase_storage.dart'; // Import Firebase Storage
 import 'package:permission_handler/permission_handler.dart';
 
 class SignupStep3 extends StatefulWidget {
@@ -11,29 +12,75 @@ class SignupStep3 extends StatefulWidget {
 }
 
 class _SignupStep3State extends State<SignupStep3> {
-  File? _image;
-  final ImagePicker _picker = ImagePicker();
+  File? _file;
+  String? _fileName;
+  bool isUploading = false; // To indicate file uploading status
 
-  // Function to request permissions
+  // Function to request storage permissions
   Future<void> _requestPermissions() async {
-    var status = await Permission.camera.status;
-    if (!status.isGranted) {
-      await Permission.camera.request();
-    }
     var storageStatus = await Permission.storage.status;
     if (!storageStatus.isGranted) {
       await Permission.storage.request();
     }
   }
 
-  // Function to pick an image from the gallery or camera
-  Future<void> _pickImage() async {
+  // Function to pick a file (PDF, etc.)
+  Future<void> _pickFile() async {
     await _requestPermissions();
-    final pickedFile = await _picker.pickImage(source: ImageSource.camera);
 
-    if (pickedFile != null) {
+    FilePickerResult? result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['pdf', 'doc', 'docx'], // You can adjust allowed extensions
+    );
+
+    if (result != null) {
       setState(() {
-        _image = File(pickedFile.path);
+        _file = File(result.files.single.path!);
+        _fileName = result.files.single.name;
+      });
+    }
+  }
+
+  // Function to upload the file to Firebase Storage
+  Future<void> _uploadFile() async {
+    if (_file == null) {
+      // No file selected, show error message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Please attach proof of registration!')),
+      );
+      return;
+    }
+
+    setState(() {
+      isUploading = true;
+    });
+
+    try {
+      // Create a reference to Firebase Storage
+      FirebaseStorage storage = FirebaseStorage.instance;
+      Reference ref = storage.ref().child('uploads/${_fileName}');
+
+      // Upload the file
+      UploadTask uploadTask = ref.putFile(_file!);
+      TaskSnapshot snapshot = await uploadTask;
+
+      // Get the file URL
+      String downloadURL = await snapshot.ref.getDownloadURL();
+      print('File uploaded successfully: $downloadURL');
+
+      // Navigate to the next step (SignupStep4)
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => SignupStep4()),
+      );
+    } catch (e) {
+      print('File upload failed: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('File upload failed!')),
+      );
+    } finally {
+      setState(() {
+        isUploading = false;
       });
     }
   }
@@ -49,7 +96,7 @@ class _SignupStep3State extends State<SignupStep3> {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-             SizedBox(height: 50), // Header text and description
+              SizedBox(height: 50), // Header text and description
               Text(
                 "FarmerEats",
                 style: TextStyle(fontSize: 18),
@@ -66,7 +113,7 @@ class _SignupStep3State extends State<SignupStep3> {
               ),
               SizedBox(height: 8.0),
               Text(
-                "Attached proof of Department of Agriculture registrations i.e. Florida Fresh, USDA Approved, USDA Organic",
+                "Attach proof of Department of Agriculture registrations (PDF, DOC, etc.)",
                 style: TextStyle(fontSize: 14.0, color: Colors.grey[400]),
               ),
               SizedBox(height: 32.0),
@@ -83,29 +130,29 @@ class _SignupStep3State extends State<SignupStep3> {
                         color: Colors.grey[700]),
                   ),
                   GestureDetector(
-                    onTap: _pickImage,
+                    onTap: _pickFile,
                     child: CircleAvatar(
                       radius: 30,
                       backgroundColor: Color(0xFFD5715B), // Same as the Continue button color
-                      child: Icon(Icons.camera_alt, color: Colors.white, size: 30.0),
+                      child: Icon(Icons.attach_file, color: Colors.white, size: 30.0),
                     ),
                   ),
                 ],
               ),
               SizedBox(height: 16.0),
 
-              // Display the selected image (if available)
-              _image != null
+              // Display the selected file name (if available)
+              _file != null
                   ? Padding(
                 padding: const EdgeInsets.only(top: 16.0),
-                child: Image.file(
-                  _image!,
-                  width: 100,
-                  height: 100,
+                child: Text(
+                  'Selected file: $_fileName',
+                  style: TextStyle(color: Colors.black, fontSize: 14.0),
                 ),
               )
                   : SizedBox(),
-              SizedBox(height: 400),
+
+              SizedBox(height: 200),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -129,22 +176,12 @@ class _SignupStep3State extends State<SignupStep3> {
                         borderRadius: BorderRadius.circular(30.0),
                       ),
                     ),
-                    onPressed: () {
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(builder: (context) => SignupStep4()),
-                      );
-                      if (_image != null) {
-                        // Handle image upload or navigate to the next step
-                        print("Image selected: ${_image!.path}");
-                      } else {
-                        // Prompt the user to select an image
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Please attach proof of registration!')),
-                        );
-                      }
-                    },
-                    child: Text(
+                    onPressed: isUploading ? null : _uploadFile, // Upload the file on click
+                    child: isUploading
+                        ? CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    )
+                        : Text(
                       "Continue",
                       style: TextStyle(fontSize: 16.0, color: Colors.white),
                     ),

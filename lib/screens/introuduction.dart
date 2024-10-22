@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:smooth_page_indicator/smooth_page_indicator.dart'; // Importing smooth page indicator package
 import 'package:farmer_eats/screens/login/loginScreen.dart';
 
 class IntroductionScreen extends StatefulWidget {
@@ -16,7 +17,7 @@ class _IntroductionScreenState extends State<IntroductionScreen> {
     return Scaffold(
       body: PageView(
         controller: _pageController,
-        physics: const NeverScrollableScrollPhysics(),
+        physics: const BouncingScrollPhysics(),
         children: [
           buildPage(
             context,
@@ -95,9 +96,9 @@ class _IntroductionScreenState extends State<IntroductionScreen> {
             Expanded(
               flex: 2,
               child: Container(
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   color: Colors.white,
-                  borderRadius: const BorderRadius.only(
+                  borderRadius: BorderRadius.only(
                     topLeft: Radius.circular(30),
                     topRight: Radius.circular(30),
                   ),
@@ -109,10 +110,10 @@ class _IntroductionScreenState extends State<IntroductionScreen> {
                     children: [
                       Text(
                         title,
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
-                          color: bgColor,
+                          color: Colors.black,
                         ),
                       ),
                       Text(
@@ -120,6 +121,23 @@ class _IntroductionScreenState extends State<IntroductionScreen> {
                         style: const TextStyle(color: Colors.grey, fontSize: 16),
                         textAlign: TextAlign.center,
                       ),
+
+                      // Expanding dots indicator (positioned between description and button)
+                      SmoothPageIndicator(
+                        controller: _pageController,
+                        count: 3, // Number of pages
+                        effect: const ExpandingDotsEffect(
+                          activeDotColor: Colors.black,
+                          dotColor: Colors.grey,
+                          dotHeight: 8,
+                          dotWidth: 8,
+                          expansionFactor: 3.0, // Makes the active dot expand into a bar
+                          spacing: 8, // Adjust spacing between dots
+                        ),
+                      ),
+
+                      const SizedBox(height: 20), // Space between indicator and button
+
                       ElevatedButton(
                         style: ElevatedButton.styleFrom(
                           backgroundColor: bgColor,
@@ -132,9 +150,10 @@ class _IntroductionScreenState extends State<IntroductionScreen> {
                         onPressed: onJoinMovement,
                         child: const Text('Join the movement!', style: TextStyle(fontSize: 18)),
                       ),
+
                       TextButton(
                         onPressed: () => _navigateToLogin(context),
-                        child: Text('Login', style: TextStyle(color: Colors.black, fontSize: 16)),
+                        child: const Text('Login', style: TextStyle(color: Colors.black, fontSize: 16)),
                       ),
                     ],
                   ),

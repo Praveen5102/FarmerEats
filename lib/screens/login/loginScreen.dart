@@ -1,5 +1,5 @@
-import 'package:flutter/material.dart';
 import 'package:farmer_eats/screens/signup/signup_step_1.dart';
+import 'package:flutter/material.dart';
 import 'package:farmer_eats/screens/login/ForgotPasswordScreen.dart';
 import '../HomeScreen.dart';
 
@@ -19,6 +19,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(24.0),

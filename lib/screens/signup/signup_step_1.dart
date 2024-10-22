@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:farmer_eats/screens/signup/signup_step_2.dart';
 import 'package:farmer_eats/screens/login/loginScreen.dart';
-import 'package:flutter/services.dart'; // Assuming you have a LoginScreen class
+import 'package:flutter/services.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class SignupStep1 extends StatefulWidget {
   @override
@@ -20,6 +22,10 @@ class _SignupStep1State extends State<SignupStep1> {
   bool _obscurePassword = true;
   bool _obscureRePassword = true;
 
+  // Firebase instances
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -37,9 +43,9 @@ class _SignupStep1State extends State<SignupStep1> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 SizedBox(height: 10),
-                Text("FarmerEats",style: TextStyle(fontSize: 16)),
+                Text("FarmerEats", style: TextStyle(fontSize: 16)),
                 SizedBox(height: 50),
-                Text("Signup 1 of 4",style: TextStyle(color: Colors.grey),),
+                Text("Signup 1 of 4", style: TextStyle(color: Colors.grey)),
                 SizedBox(height: 10),
                 Text('Welcome!', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
                 SizedBox(height: 56),
@@ -105,25 +111,25 @@ class _SignupStep1State extends State<SignupStep1> {
         const SizedBox(height: 50),
         Row(
           children: [
-            SizedBox(width: 50),
+            SizedBox(width: 10),
             TextButton(
               onPressed: () {
                 Navigator.push(context, MaterialPageRoute(builder: (context) => LoginScreen()));
               },
-              child: Text('Login', style: TextStyle(fontWeight: FontWeight.bold,color: Colors.black)),
+              child: Text('Login', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black)),
             ),
-            SizedBox(width:50),
+            SizedBox(width: 80),
             ElevatedButton(
-              onPressed: () {
+              onPressed: () async {
                 if (_validateFields()) {
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => SignupStep2()));
+                  await _signup();
                 }
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Color(0xFFD5715B),
-                minimumSize: Size(200, 40),
+                minimumSize: Size(150, 40),
               ),
-              child: Text('Continue',style: TextStyle(color: Colors.white),),
+              child: Text('Continue', style: TextStyle(color: Colors.white)),
             ),
           ],
         ),
@@ -189,7 +195,7 @@ class _SignupStep1State extends State<SignupStep1> {
       return false;
     }
 
-    if (password.length < 6) { // Minimum password length validation
+    if (password.length < 6) {
       _showErrorDialog('Password must be at least 6 characters long');
       return false;
     }
@@ -202,6 +208,28 @@ class _SignupStep1State extends State<SignupStep1> {
     return true;
   }
 
+  Future<void> _signup() async {
+    try {
+      // Create a new user in Firebase Auth
+      UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
+        email: emailController.text,
+        password: passwordController.text,
+      );
+
+      // Add user details to Firestore
+      await _firestore.collection('users').doc(userCredential.user?.uid).set({
+        'name': nameController.text,
+        'email': emailController.text,
+        'phone': phoneController.text,
+      });
+
+      // Navigate to the next step
+      Navigator.push(context, MaterialPageRoute(builder: (context) => SignupStep2()));
+    } on FirebaseAuthException catch (e) {
+      _showErrorDialog(e.message ?? 'An error occurred');
+    }
+  }
+
   void _showErrorDialog(String message) {
     showDialog(
       context: context,
@@ -211,10 +239,10 @@ class _SignupStep1State extends State<SignupStep1> {
           content: Text(message),
           actions: [
             TextButton(
-              child: Text('OK'),
               onPressed: () {
                 Navigator.of(context).pop();
               },
+              child: Text('OK'),
             ),
           ],
         );

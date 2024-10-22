@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:farmer_eats/screens/signup/signup_step_3.dart';
 import 'package:flutter/services.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class SignupStep2 extends StatefulWidget {
   @override
@@ -8,18 +10,48 @@ class SignupStep2 extends StatefulWidget {
 }
 
 class _SignupStep2State extends State<SignupStep2> {
-  // List of states for the dropdown
-  final List<String> states = ['Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh', 'Goa', 'Gujarat', 'Haryana', 'Himachal Pradesh', 'Jharkhand', 'Karnataka',
-    'Kerala', 'Madhya Pradesh', 'Maharashtra', 'Manipur', 'Meghalaya', 'Mizoram', 'Nagaland', 'Odisha', 'Punjab', 'Rajasthan', 'Sikkim', 'Tamil Nadu', 'Telangana', 'Tripura', 'Uttar Pradesh', 'Uttarakhand', 'West Bengal'
+  final List<String> states = [
+    'Andhra Pradesh',
+    'Arunachal Pradesh',
+    'Assam',
+    'Bihar',
+    'Chhattisgarh',
+    'Goa',
+    'Gujarat',
+    'Haryana',
+    'Himachal Pradesh',
+    'Jharkhand',
+    'Karnataka',
+    'Kerala',
+    'Madhya Pradesh',
+    'Maharashtra',
+    'Manipur',
+    'Meghalaya',
+    'Mizoram',
+    'Nagaland',
+    'Odisha',
+    'Punjab',
+    'Rajasthan',
+    'Sikkim',
+    'Tamil Nadu',
+    'Telangana',
+    'Tripura',
+    'Uttar Pradesh',
+    'Uttarakhand',
+    'West Bengal'
   ];
+
   String? selectedState;
   final TextEditingController zipController = TextEditingController();
+  final TextEditingController businessNameController = TextEditingController();
+  final TextEditingController informalNameController = TextEditingController();
+  final TextEditingController streetAddressController = TextEditingController();
+  final TextEditingController cityController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: SingleChildScrollView(
-        // Make the page scrollable
         child: Center(
           child: Container(
             width: double.infinity,
@@ -33,13 +65,12 @@ class _SignupStep2State extends State<SignupStep2> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 SizedBox(height: 50),
-                Text("FarmerEats",style: TextStyle(fontSize: 16),),
+                Text("FarmerEats", style: TextStyle(fontSize: 16)),
                 SizedBox(height: 40),
                 Text("Signup 2 of 4", style: TextStyle(color: Colors.grey)),
                 SizedBox(height: 10),
                 Text('Farm Info',
-                    style:
-                        TextStyle(fontSize: 36, fontWeight: FontWeight.bold)),
+                    style: TextStyle(fontSize: 36, fontWeight: FontWeight.bold)),
                 SizedBox(height: 40),
                 _profileForm(context),
               ],
@@ -53,43 +84,45 @@ class _SignupStep2State extends State<SignupStep2> {
   Widget _profileForm(BuildContext context) {
     return Column(
       children: [
-        _textField('Business Name', false, Icons.label),
-        SizedBox(height: 10), // Spacing between text fields
-        _textField('Informal Name', false, Icons.emoji_emotions),
+        _textField('Business Name', false, Icons.label, businessNameController),
         SizedBox(height: 10),
-        _textField('Street Address', false, Icons.home),
+        _textField('Informal Name', false, Icons.emoji_emotions, informalNameController),
         SizedBox(height: 10),
-        _textField('City', false, Icons.pin_drop_outlined),
+        _textField('Street Address', false, Icons.home, streetAddressController),
+        SizedBox(height: 10),
+        _textField('City', false, Icons.pin_drop_outlined, cityController),
         SizedBox(height: 10),
         Row(
           children: [
-            SizedBox(width: 40),
-            _stateDropdown(), // Dropdown for State
-            SizedBox(width: 20), // Spacing between dropdown and zip code
-            _zipCodeField(), // Text field for Zip Code
+            SizedBox(width: 10),
+            _stateDropdown(),
+            SizedBox(width: 30),
+            _zipCodeField(),
           ],
         ),
         SizedBox(height: 200),
-
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             IconButton(
               icon: Icon(Icons.arrow_back, color: Colors.black),
               onPressed: () {
-                Navigator.pop(context); // Go back to the previous screen
+                Navigator.pop(context);
               },
             ),
             ElevatedButton(
-              onPressed: () {
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (context) => SignupStep3()),
-                );
+              onPressed: () async {
+                if (_validateFields()) {
+                  await _submitForm();
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (context) => SignupStep3()),
+                  );
+                }
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: Color(0xFFD5715B), // Custom color
-                minimumSize: Size(200, 40), // Increase width
+                backgroundColor: Color(0xFFD5715B),
+                minimumSize: Size(200, 40),
               ),
               child: Text('Continue', style: TextStyle(color: Colors.white)),
             ),
@@ -100,10 +133,61 @@ class _SignupStep2State extends State<SignupStep2> {
     );
   }
 
-  // Dropdown for state selection
+  bool _validateFields() {
+    if (businessNameController.text.isEmpty ||
+        informalNameController.text.isEmpty ||
+        streetAddressController.text.isEmpty ||
+        cityController.text.isEmpty ||
+        selectedState == null ||
+        zipController.text.isEmpty) {
+      _showErrorDialog("Please fill in all fields.");
+      return false;
+    }
+    return true;
+  }
+
+  Future<void> _submitForm() async {
+    try {
+      User? user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        // Store user data in Firestore
+        await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
+          'businessName': businessNameController.text,
+          'informalName': informalNameController.text,
+          'streetAddress': streetAddressController.text,
+          'city': cityController.text,
+          'state': selectedState,
+          'zipCode': zipController.text,
+        });
+      }
+    } catch (e) {
+      _showErrorDialog("Failed to save user data. Please try again.");
+    }
+  }
+
+  void _showErrorDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('Error'),
+          content: Text(message),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   Widget _stateDropdown() {
     return Container(
-      width: 140,
+      width: 120,
       padding: EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
         color: Colors.grey[200],
@@ -129,7 +213,6 @@ class _SignupStep2State extends State<SignupStep2> {
     );
   }
 
-  // Text field for Zip Code
   Widget _zipCodeField() {
     return Container(
       width: 140,
@@ -143,27 +226,23 @@ class _SignupStep2State extends State<SignupStep2> {
           border: InputBorder.none,
           hintText: 'Zip Code',
         ),
-        inputFormatters: [
-          FilteringTextInputFormatter.digitsOnly
-        ], // To ensure only numbers are entered
+        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
       ),
     );
   }
 
-  Widget _textField(String hint, bool isPassword, IconData icon) {
+  Widget _textField(String hint, bool isPassword, IconData icon, TextEditingController controller) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Container(
-        width: 300, // Set the desired width for the text field
+        width: 300,
         child: TextField(
+          controller: controller,
           obscureText: isPassword,
           decoration: InputDecoration(
             prefixIcon: Icon(icon),
-            // Icon for the text field
             filled: true,
-            // Enable fill color
             fillColor: Colors.grey[200],
-            // Set the background color to light grey
             border: InputBorder.none,
             hintText: hint,
           ),
